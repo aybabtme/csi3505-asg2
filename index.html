@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="main.css"/>
+    <title>Matrix Multiplication</title>
+    <script type="text/javascript" src="matrix.js"></script>
+</head>
+<body>
+
+<h1>Antoine Grondin - 6276497</h1>
+
+<h2>CSI3505 - Asg 1</h2>
+
+<h1>Exercice 1</h1>
+
+<h2>a)</h2>
+<blockquote>Trouvez le nombre exact total de multiplications, d'additions et de
+    soustractions (tous ensemble) de l'algorithme classique pour la
+    multiplication matricielle, et de l'algorithme de Strassen pour la
+    multiplication matricielle pour $n=4$ (montrez les formules que vous
+    employez). Lequel est plus rapide pour cette valeur de $n$.
+</blockquote>
+
+<script>
+
+    var a = Matrix.new(2, 2);
+    a.set(1, 0, 3);
+    print(a.latexify());
+
+    var b = Matrix.new(2, 2);
+    b.set(0, 1, 2);
+    print(b.latexify());
+
+
+    var addCount = 0;
+    Scalar.addFunc = function(a, b) {
+        addCount++;
+        return a + b;
+    }
+
+    var mulCount = 0;
+    Scalar.mulFunc = function(a, b) {
+        mulCount++;
+        return a * b;
+    }
+
+    var c = Matrix.stdMatrixMul(a, b);
+    print(c.latexify());
+    print("\nCounted stuff ")
+    print(addCount);
+    print(mulCount);
+</script>
+
+
+<h2>b)</h2>
+
+<blockquote><p>Écrivez la formule récursive pour $W(n)$, $n$ étant une
+    puissance de 2, pour l'algorithme de Strassen, en comptant seulement les
+    multiplications, quand le seuil employé pour l'algorithme est $n=4$.
+    Expliquez votre réponse brièvement. Vous N’AVEZ PAS BESOIN de résoudre
+    cette relation de récurrence.</p></blockquote>
+
+<h1>Exercice 2</h1>
+
+<blockquote><p>Considérez l’idée suivante pour trouver un nombre $x$ dans une
+    liste $S$ triée de $n$ nombres, où $n$ est un multiple exact de $4$ :</p>
+
+    <ul>
+        <li>Regardez chaque quatrième nombre, et comparez-le avec $x$.</li>
+        <li>Si vous trouvez $x$, arrêtez.</li>
+        <li>Si vous rencontrez un nombre plus grand que $x$, alors reculez un
+            nombre à la fois dans $S$ pour au plus trois fois, en cherchant
+            $x$.
+        </li>
+        <li>Encore une fois, si vous trouvez $x$, arrêtez.</li>
+    </ul>
+
+
+    <p>Voici ci-dessous le pseudocode pour cet algorithme :</p>
+
+    <p><strong>Inputs</strong>: un entier positif $n$ qui est un multiple de
+        $4$, un tableau trié $S$ de $n$ clés indexé de $1$ à $n$, une clé
+        $x$.</p>
+
+    <p><strong>Outputs</strong>: position, la position de $x$ dans $S$ ($0$ si
+        $x$ n’est pas dans $S$)</p></blockquote>
+
+<pre><code>void FourthSearch(int n, const keytype S[], keytype x, index &position) {
+    index i, last;
+    boolean done;
+    position = 0;
+    done = false;
+    i = 4;
+
+    while (position == 0 && i<=n && !done) {
+
+        if (x == S[i]) { position = i; }
+        else if (x > S[i]) { i= i + 4; }
+
+        else { //go backwards
+            last = i-3;
+            while (!done) {
+                i = i-1
+                if (S[i] = = x) {
+                    position = i;
+                    done = true;
+                } else if ((x &gt; S[i]) || (i = = last)) {
+                    done = true;
+                }
+            }
+        }
+    }
+}
+</code></pre>
+
+<blockquote><p>Faites une analyse du cas moyen de cet algorithme en utilisant la
+    méthode vue en classe, en assumant que $n=4$, que tous les types d’entrée
+    sont équiprobables et que toutes les clés dans $S$ sont distinctes.
+    Comptez, pour vos opérations de base, les comparaisons de $x$ avec les
+    clés dans $S$ (et comptez TOUTES ces comparaisons) Vous devriez avoir
+    toutes les entrées partitionnées en $9$ types si vous faites cette analyse
+    correctement. Vous devez clairement expliquer la partition de vos
+    entrées.</p></blockquote>
+
+<h1>Exercice 3</h1>
+
+<h2>a)</h2>
+
+<blockquote><p>Prouvez ce qui suit en utilisant les limites et la règle de
+    L’Hôpital :
+    $$ 10(\lg n)^2 + 15 \lg n \text{ est } O(n \lg n)$$</p></blockquote>
+
+<h2>b)</h2>
+
+<blockquote><p>Prouvez ce qui suit en utilisant les limites et la règle de
+    L’Hôpital :
+    $$4n^2 + 10n^3 + 20 \text{ est } \Omega(n^2)$$</p></blockquote>
+
+<h2>c)</h2>
+
+<blockquote><p>Prouvez ce qui suit en utilisant la définition formelle de « Big
+    Oh » (i.e. trouvez $c$ et $n_0$) :
+    $$1000n^2 + 10n + 10 \in O(n^2)$$</p></blockquote>
+
+<h1>Exercice 4</h1>
+
+<blockquote><p>Considérez l’algorithme suivant basé sur la stratégie <em>diviser
+    pour régner</em> qui, étant donné trois entiers positifs $x$, $n$ et $p$
+    où $n$ est une puissance de $2$ (i.e. que $n=2k$ pour $k>=1$), trouve le
+    reste quand $xn$ est divisé par $p$.</p>
+
+    <p><strong>Inputs</strong>: trois entiers positifs $x$, $n$ et $p$, où
+        $n=2k$ pour $k>=1$.
+        <strong>Output</strong>: le reste quand $xn$ est divisé par $p$.</p>
+</blockquote>
+
+<pre><code>int findRem(int x, int n, int p) {
+    int r;
+    if (n == 2) {
+        return (x*x) % p;
+    } else {
+        r = findRem(x, n/2, p);
+        return (r*r) mod p;
+    }
+}
+</code></pre>
+
+<blockquote><p>Faites une analyse du pire cas pour l’algorithme ci-dessus. Bien
+    sûr, assumez que $n$ est une puissance de $2$, i.e. $n=2k$ pour $k>=1$.
+    Faites les parties suivantes pour votre analyse :</p></blockquote>
+
+<h2>a)</h2>
+
+<blockquote><p>Ecrivez une formule récursive pour l’analyse du pire cas de cet
+    algorithme (n’oubliez pas le cas de base dans cette formule). Pour vos
+    opérations de base qui sont comptées, utilisez les divisions, les
+    multiplications et le nombre de fois que la fonction $\bmod$ est
+    appelée.</p></blockquote>
+
+<h2>b)</h2>
+
+<blockquote><p>Avec la substitution, résolvez la relation de récurrence de
+    <em>a)</em>. Montrez votre travail, et suivez la méthode vue en classe.</p>
+</blockquote>
+
+<h2>c)</h2>
+
+<blockquote><p>Vérifiez votre solution de b) en utilisant l’induction.</p>
+</blockquote>
+
+<h2>d)</h2>
+
+<blockquote><p>Quelle est la complexité de cet algorithme? Vous n’avez qu’à
+    donner votre réponse ici.</p></blockquote>
+
+<h1>Exercice 5</h1>
+
+<h2>a)</h2>
+
+<blockquote><p>Considérez le problème où on vous donne un nombre $n$, $n>=0$,
+    et vous voulez savoir de combien de manières différentes vous pouvez
+    obtenir ce montant avec seulement des pièces de 10 cents, 5 cents et 1
+    cent. Concevez un algorithme du type <em>diviser pour régner</em> pour
+    résoudre ce problème qui est basé sur l’idée suivante : Le nombre de
+    manières pour obtenir un montant $n$ en utilisant les pièces de 10 cents,
+    5 cents et 1 cent est égal au nombre de manières que vous pouvez obtenir
+    ce montant en utilisant un 10 cents (i.e. la pièce avec la plus grande
+    valeur), et le nombre de manières sans utiliser de 10 cents. Expliquez
+    votre idée pour l’algorithme du type <em>diviser pour régner</em>
+    clairement en français, puis écrivez-le en pseudocode.</p></blockquote>
+
+<h2>b)</h2>
+
+<blockquote><p>Pensez-vous que cette stratégie est bonne (en termes
+    d’efficacité) pour ce problème ou non? Expliquez brièvement votre
+    réponse.</p></blockquote>
+
+<h1>Exercice 6</h1>
+
+<blockquote><p>Supposez que vous avez un algorithme qui a la relation de
+    récurrence suivante pour $W(n)$, en assumant que $n$ est une puissance de
+    $2$, i.e. en assumant $n=2k$, $k>=0$ :
+
+    $$\begin{aligned}
+        W(n) &= W(n/2) + n \lg n &&\text{ pour } n > 1 \\
+        W(n) &= 1                &&\text{ pour } n=1
+    \end{aligned}$$
+
+    En utilisant la substitution et en assumant que $n$ est une puissance de
+    $2$, i.e. $n=2k$, trouvez une formule exacte (i.e. non récursive) pour
+    $W(n)$. Soyez certain de montrer votre travail, et de simplifier votre
+    réponse finale autant que possible. Veuillez noter que vous N’AVEZ PAS
+    BESOIN de vérifier votre réponse finale en utilisant l’induction.</p>
+</blockquote>
+
+
+<script type="text/javascript"
+        src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script type="text/javascript"
+        src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/7.3/highlight.min.js"></script>
+<script>
+    MathJax.Hub.Config({
+        tex2jax: {inlineMath: [
+            ['$', '$'],
+            ['\\(', '\\)']
+        ]}
+    });
+    hljs.initHighlightingOnLoad();
+</script>
+</body>
+</html>
