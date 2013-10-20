@@ -53,15 +53,14 @@ var test = Matrix.new(6,6).randomize(0,8);
 puts(math(test.toLaTeX()));
 var subTest = test.partition(2,2,6,6);
 puts("$$"+subTest.toLaTeX()+"$$");
-subTest.setVal(0,0, 99);
+subTest.set(0,0, 99);
 puts("$$"+subTest.toLaTeX()+"$$");
 puts(math(test.toLaTeX()));
 var subSubTest = subTest.partition(2,2,4,4);
 puts("$$"+subSubTest.toLaTeX()+"$$");
-subSubTest.setVal(0,0, 99);
+subSubTest.set(0,0, 99);
 puts("$$"+subSubTest.toLaTeX()+"$$");
 puts(math(test.toLaTeX()));
-var leafSize = 4;
 
 var countOps = function (f) {
 
@@ -94,10 +93,18 @@ var t = HorizontalTable(["$n$",
                          "<strong>Straussen</strong>"]);
 
 var from = 1, to = 8;
+var leafSize = 4;
+
 for (var i = 0; i < 10; i++) {
 
-    var a = Matrix.new(n, m).randomize(from, to);
-    var b = Matrix.new(n, m).randomize(from, to);
+    var a = Matrix.new(i, i).randomize(from, to);
+    var b = Matrix.new(i, i).randomize(from, to);
+
+    puts("$$"+ a.toLaTeX() + "+" + b.toLaTeX()
+            + "=" +Matrix.add(a,b).toLaTeX()+"$$");
+
+    puts("$$"+ a.toLaTeX() + "-" + b.toLaTeX()
+            + "=" +Matrix.sub(a,b).toLaTeX()+"$$");
 
     var std = function() {
         Matrix.stdMatrixMul(a,b);

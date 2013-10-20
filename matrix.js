@@ -124,7 +124,7 @@ var Matrix = {};
   var randomizer = function (matrix, from, to) {
     for (var i = 0; i < matrix.n; i++) {
       for (var j = 0; j < matrix.m; j++) {
-        matrix.setVal(i, j, randomInt(from, to));
+        matrix.set(i, j, randomInt(from, to));
       }
     }
     return matrix;
@@ -202,12 +202,42 @@ var Matrix = {};
     return {
       partition: partitioner,
       randomize: function(from, to) { return randomizer(this, from, to); },
-      getVal: getter,
-      setVal: setter,
+      add: function(other) { return Matrix.add(this, other); },
+      sub: function(other) { return Matrix.sub(this, other); },
+      get: getter,
+      set: setter,
       toLaTeX: latexifier,
       n: i1,
       m: j1
     };
+  };
+
+  Matrix.add = function(a, b) {
+    if (a.n !== b.n || a.m !== b.m) {
+      throw "incompatible matrices, different dimensions";
+    }
+    var c = Matrix.new(a.n, a.m);
+    for (var i = 0; i < c.n; i++) {
+      for (var j = 0; j < c.m; j++) {
+        var sum = Scalar.addFunc(a.get(i, j),b.get(i, j));
+        c.set(i, j, sum);
+      }
+    }
+    return c;
+  };
+
+  Matrix.sub = function(a, b) {
+    if (a.n !== b.n || a.m !== b.m) {
+      throw "incompatible matrices, different dimensions";
+    }
+    var c = Matrix.new(a.n, a.m);
+    for (var i = 0; i < c.n; i++) {
+      for (var j = 0; j < c.m; j++) {
+        var diff = Scalar.subFunc(a.get(i, j),b.get(i, j));
+        c.set(i, j, diff);
+      }
+    }
+    return c;
   };
 
   Matrix.stdMatrixMul = function (a, b) {
@@ -219,27 +249,117 @@ var Matrix = {};
       for (var j = 0; j < b.m; j++) {
         var val = 0.0;
         for (var k = 0; k < a.m; k++) {
-          var aCell = a.getVal(i, k);
-          var bCell = b.getVal(k, j);
+          var aCell = a.get(i, k);
+          var bCell = b.get(k, j);
           var tmp = Scalar.mulFunc(aCell, bCell);
           val = Scalar.addFunc(val, tmp);
         }
-        c.setVal(i, j, val);
+        c.set(i, j, val);
       }
     }
     return c;
   };
 
-  Matrix.straussenMatrixMul = function (a, b, leafSize) {
-    if (a.m !== b.n) {
-      throw "incompatible matrices";
+  var growNextPowerOf2 = function(orig) {
+    if (orig.n !== orig.m) {
+      throw "incompatible matrices, different dimensions";
+    }
+    var n = orig.n;
+    if (n % 2 === 0) {
+      // No need to grow it
+      return orig;
+    }
+
+    var nextPow2 = function(n) {
+      var currentPow2 = Math.floor(Math.log(n)/Math.log(2));
+      return Math.pow(2, currentPow2 + 1);
+    };
+
+    var nextN = nextPow2(n);
+    var grownMat = Matrix.new(nextN, nextN);
+    for (var i = 0; i < orig.n; i++) {
+      for (var j = 0; j < orig.n; j++) {
+        grownMat.set(i, j, orig.get(i, j));
+      }
+    }
+    return grownMat;
+  };
+
+  var straussen = function(a, b, c, leafSize) {
+    if (a.n !== b.n || a.m !== b.m) {
+      throw "incompatible matrices, different dimensions";
+    }
+    if (a.n !== a.m) {
+      throw "incompatible matrices, not square matrices";
     }
 
     if (a.n <= leafSize) {
       return Matrix.stdMatrixMul(a, b);
     }
 
+    var grownA = growNextPowerOf2(a);
+    var grownB = growNextPowerOf2(b);
+    var grownC = growNextPowerOf2(c);
 
+    var partA = { n: grownA.n / 2, m: grownA.m / 2 };
+    var a11 = a.partition(0,       0,       partA.n,  partA.m);
+    var a12 = a.partition(0,       partA.m, partA.n,  grownA.m);
+    var a21 = a.partition(partA.n, 0,       grownA.n, partA.m);
+    var a22 = a.partition(partA.n, partA.m, grownA.n, grownA.m);
+
+    var partB = { n: grownB.n / 2, m: grownB.m / 2 };
+    var b11 = b.partition(0,       0,       partB.n,  partB.m);
+    var b12 = b.partition(0,       partB.m, partB.n,  grownB.m);
+    var b21 = b.partition(partB.n, 0,       grownB.n, partB.m);
+    var b22 = b.partition(partB.n, partB.m, grownB.n, grownB.m);
+
+    var m1 = Matrix.new(a11.n, b11.m);
+    var m2 = Matrix.new(a21.n, b11.m);
+    var m3 = Matrix.new(a11.n, b12.m);
+    var m4 = Matrix.new(a22.n, b11.m);
+    var m5 = Matrix.new(a11.n, b22.m);
+    var m6 = Matrix.new(a11.n, b11.m);
+    var m7 = Matrix.new(a12.n, b22.m);
+
+    straussen(a11.add(a22), b11.add(b22), m1, leafSize);
+    straussen(a21.add(a22), b11         , m2, leafSize);
+    straussen(a11         , b12.sub(b22), m3, leafSize);
+    straussen(a22         , b21.sub(b11), m4, leafSize);
+    straussen(a11.add(a12), b22         , m5, leafSize);
+    straussen(a21.sub(a11), b11.add(b12), m6, leafSize);
+    straussen(a12.sub(a22), b21.add(b22), m7, leafSize);
+
+    var c11 = m1.add(m4).sub(m5).add(m7);
+    var c12 = m3.add(m5);
+    var c21 = m2.add(m4);
+    var c22 = m1.add(m3).sub(m2).add(m6);
+
+    for (var i = 0; i < grownC.n; i++) {
+      for (var j = 0; j < grownC.m; j++) {
+        if (i < grownC.n && j < grownC.m) {
+          grownC.set(i, j, c11.get(i, j));
+        }
+        if (i < grownC.n && j >= grownC.m) {
+          grownC.set(i, j, c12.get(i, j + grownC.m/2));
+        }
+        if (i >= grownC.n && j < grownC.m) {
+          grownC.set(i, j, c21.get(i + grownC.n/2, j));
+        }
+        if (i >= grownC.n && j >= grownC.m) {
+          grownC.set(i, j, c22.get(i + grownC.n/2, j + grownC.m/2));
+        }
+      }
+      if (i < c.n && j < c.m) {
+        c.set(i,j, grownC.get(i,j));
+      }
+    }
+
+  };
+
+  Matrix.straussenMatrixMul = function (a, b, leafSize) {
+    var c = Matrix.new(a.n, b.m);
+    straussen(a,b,c,leafSize);
+    return c;
   };
 })();
 
