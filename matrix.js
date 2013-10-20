@@ -274,13 +274,13 @@ var Matrix = {};
     if (orig.n !== orig.m) {
       throw "incompatible matrices, different dimensions";
     }
-    var n = orig.n;
-    if (n % 2 === 0) {
-      // No need to grow it
+
+    var nextN = nextPow2(orig.n);
+    if (nextN/2 === orig.n) {
+      // Don't need to grow it
       return orig;
     }
 
-    var nextN = nextPow2(n);
     var grownMat = Matrix.new(nextN, nextN);
     for (var i = 0; i < orig.n; i++) {
       for (var j = 0; j < orig.n; j++) {
@@ -289,6 +289,7 @@ var Matrix = {};
     }
     return grownMat;
   };
+
 
   var straussen = function(a, b, c, leafSize) {
     if (a.n !== b.n || a.m !== b.m) {
@@ -339,7 +340,7 @@ var Matrix = {};
     var c21 = m2.add(m4);
     var c22 = m1.add(m3).sub(m2).add(m6);
 
-    var halfN = nextPow2(c.n)/2;
+    var halfN = c11.n;
     for (var i = 0; i < c.n; i++) {
       for (var j = 0; j < c.n; j++) {
         if (i < halfN && j < halfN) {
@@ -351,7 +352,7 @@ var Matrix = {};
         else if (i >= halfN && j < halfN) {
           c.set(i, j, c21.get(i - halfN, j));
         }
-        else if (i >= halfN && j < halfN) {
+        else if (i >= halfN && j >= halfN) {
           c.set(i, j, c22.get(i - halfN, j - halfN));
         }
       }

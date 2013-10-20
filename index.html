@@ -100,12 +100,6 @@ for (var i = 0; i < 10; i++) {
     var a = Matrix.new(i, i).randomize(from, to);
     var b = Matrix.new(i, i).randomize(from, to);
 
-    puts("$$"+ a.toLaTeX() + "+" + b.toLaTeX()
-            + "=" +Matrix.add(a,b).toLaTeX()+"$$");
-
-    puts("$$"+ a.toLaTeX() + "-" + b.toLaTeX()
-            + "=" +Matrix.sub(a,b).toLaTeX()+"$$");
-
     puts("$$"+ a.toLaTeX() + "\\times" + b.toLaTeX()
             + "=" + Matrix.stdMatrixMul(a,b).toLaTeX()+"$$");
 
