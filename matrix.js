@@ -291,7 +291,7 @@ var Matrix = {};
   };
 
 
-  var straussen = function(a, b, c, leafSize) {
+  var strassen = function(a, b, c, leafSize) {
     if (a.n !== b.n || a.m !== b.m) {
       throw "incompatible matrices, different dimensions";
     }
@@ -327,13 +327,13 @@ var Matrix = {};
     var m6 = Matrix.new(a11.n, b11.m);
     var m7 = Matrix.new(a12.n, b22.m);
 
-    straussen(a11.add(a22), b11.add(b22), m1, leafSize);
-    straussen(a21.add(a22), b11         , m2, leafSize);
-    straussen(a11         , b12.sub(b22), m3, leafSize);
-    straussen(a22         , b21.sub(b11), m4, leafSize);
-    straussen(a11.add(a12), b22         , m5, leafSize);
-    straussen(a21.sub(a11), b11.add(b12), m6, leafSize);
-    straussen(a12.sub(a22), b21.add(b22), m7, leafSize);
+    strassen(a11.add(a22), b11.add(b22), m1, leafSize);
+    strassen(a21.add(a22), b11         , m2, leafSize);
+    strassen(a11         , b12.sub(b22), m3, leafSize);
+    strassen(a22         , b21.sub(b11), m4, leafSize);
+    strassen(a11.add(a12), b22         , m5, leafSize);
+    strassen(a21.sub(a11), b11.add(b12), m6, leafSize);
+    strassen(a12.sub(a22), b21.add(b22), m7, leafSize);
 
     var c11 = m1.add(m4).sub(m5).add(m7);
     var c12 = m3.add(m5);
@@ -359,9 +359,9 @@ var Matrix = {};
     }
   };
 
-  Matrix.straussenMatrixMul = function (a, b, leafSize) {
+  Matrix.strassenMatrixMul = function (a, b, leafSize) {
     var c = Matrix.new(a.n, b.m);
-    straussen(a,b,c,leafSize);
+    strassen(a,b,c,leafSize);
     return c;
   };
 })();
