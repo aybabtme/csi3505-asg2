@@ -200,6 +200,7 @@ var Matrix = {};
     };
 
     return {
+      _mat: mat,
       partition: partitioner,
       randomize: function(from, to) { return randomizer(this, from, to); },
       add: function(other) { return Matrix.add(this, other); },
@@ -207,8 +208,8 @@ var Matrix = {};
       get: getter,
       set: setter,
       toLaTeX: latexifier,
-      n: i1,
-      m: j1
+      n: i1 - i0,
+      m: j1 - j0
     };
   };
 
@@ -240,11 +241,10 @@ var Matrix = {};
     return c;
   };
 
-  Matrix.stdMatrixMul = function (a, b) {
+  var mul = function(a, b, c) {
     if (a.m !== b.n) {
       throw "incompatible matrices";
     }
-    var c = Matrix.new(a.n, b.m);
     for (var i = 0; i < a.n; i++) {
       for (var j = 0; j < b.m; j++) {
         var val = 0.0;
@@ -257,7 +257,17 @@ var Matrix = {};
         c.set(i, j, val);
       }
     }
+  };
+
+  Matrix.stdMatrixMul = function (a, b) {
+    var c = Matrix.new(a.n, b.m);
+    mul(a,b,c);
     return c;
+  };
+
+  var nextPow2 = function(n) {
+    var currentPow2 = Math.floor(Math.log(n)/Math.log(2));
+    return Math.pow(2, currentPow2 + 1);
   };
 
   var growNextPowerOf2 = function(orig) {
@@ -269,11 +279,6 @@ var Matrix = {};
       // No need to grow it
       return orig;
     }
-
-    var nextPow2 = function(n) {
-      var currentPow2 = Math.floor(Math.log(n)/Math.log(2));
-      return Math.pow(2, currentPow2 + 1);
-    };
 
     var nextN = nextPow2(n);
     var grownMat = Matrix.new(nextN, nextN);
@@ -294,24 +299,24 @@ var Matrix = {};
     }
 
     if (a.n <= leafSize) {
-      return Matrix.stdMatrixMul(a, b);
+      mul(a, b, c);
+      return;
     }
 
     var grownA = growNextPowerOf2(a);
     var grownB = growNextPowerOf2(b);
-    var grownC = growNextPowerOf2(c);
 
     var partA = { n: grownA.n / 2, m: grownA.m / 2 };
-    var a11 = a.partition(0,       0,       partA.n,  partA.m);
-    var a12 = a.partition(0,       partA.m, partA.n,  grownA.m);
-    var a21 = a.partition(partA.n, 0,       grownA.n, partA.m);
-    var a22 = a.partition(partA.n, partA.m, grownA.n, grownA.m);
+    var a11 = grownA.partition(0,       0,       partA.n,  partA.m);
+    var a12 = grownA.partition(0,       partA.m, partA.n,  grownA.m);
+    var a21 = grownA.partition(partA.n, 0,       grownA.n, partA.m);
+    var a22 = grownA.partition(partA.n, partA.m, grownA.n, grownA.m);
 
     var partB = { n: grownB.n / 2, m: grownB.m / 2 };
-    var b11 = b.partition(0,       0,       partB.n,  partB.m);
-    var b12 = b.partition(0,       partB.m, partB.n,  grownB.m);
-    var b21 = b.partition(partB.n, 0,       grownB.n, partB.m);
-    var b22 = b.partition(partB.n, partB.m, grownB.n, grownB.m);
+    var b11 = grownB.partition(0,       0,       partB.n,  partB.m);
+    var b12 = grownB.partition(0,       partB.m, partB.n,  grownB.m);
+    var b21 = grownB.partition(partB.n, 0,       grownB.n, partB.m);
+    var b22 = grownB.partition(partB.n, partB.m, grownB.n, grownB.m);
 
     var m1 = Matrix.new(a11.n, b11.m);
     var m2 = Matrix.new(a21.n, b11.m);
@@ -334,26 +339,23 @@ var Matrix = {};
     var c21 = m2.add(m4);
     var c22 = m1.add(m3).sub(m2).add(m6);
 
-    for (var i = 0; i < grownC.n; i++) {
-      for (var j = 0; j < grownC.m; j++) {
-        if (i < grownC.n && j < grownC.m) {
-          grownC.set(i, j, c11.get(i, j));
+    var halfN = nextPow2(c.n)/2;
+    for (var i = 0; i < c.n; i++) {
+      for (var j = 0; j < c.n; j++) {
+        if (i < halfN && j < halfN) {
+          c.set(i, j, c11.get(i, j));
         }
-        if (i < grownC.n && j >= grownC.m) {
-          grownC.set(i, j, c12.get(i, j + grownC.m/2));
+        else if (i < halfN && j >= halfN) {
+          c.set(i, j, c12.get(i, j - halfN));
         }
-        if (i >= grownC.n && j < grownC.m) {
-          grownC.set(i, j, c21.get(i + grownC.n/2, j));
+        else if (i >= halfN && j < halfN) {
+          c.set(i, j, c21.get(i - halfN, j));
         }
-        if (i >= grownC.n && j >= grownC.m) {
-          grownC.set(i, j, c22.get(i + grownC.n/2, j + grownC.m/2));
+        else if (i >= halfN && j < halfN) {
+          c.set(i, j, c22.get(i - halfN, j - halfN));
         }
-      }
-      if (i < c.n && j < c.m) {
-        c.set(i,j, grownC.get(i,j));
       }
     }
-
   };
 
   Matrix.straussenMatrixMul = function (a, b, leafSize) {

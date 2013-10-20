@@ -106,6 +106,13 @@ for (var i = 0; i < 10; i++) {
     puts("$$"+ a.toLaTeX() + "-" + b.toLaTeX()
             + "=" +Matrix.sub(a,b).toLaTeX()+"$$");
 
+    puts("$$"+ a.toLaTeX() + "\\times" + b.toLaTeX()
+            + "=" + Matrix.stdMatrixMul(a,b).toLaTeX()+"$$");
+
+    puts("$$"+ a.toLaTeX() + "\\times" + b.toLaTeX()
+            + "=" + Matrix.straussenMatrixMul(a,b,leafSize).toLaTeX()+"$$");
+
+
     var std = function() {
         Matrix.stdMatrixMul(a,b);
     };
