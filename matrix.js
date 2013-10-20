@@ -111,87 +111,102 @@ var Matrix = {};
     return arr;
   };
 
-  Matrix.new = function (n, m) {
-    var mat = new Create2DArray(n, m);
+  var windower = function(win) {
+    var _win = win || {};
+    return {
+      from_i: _win.from_i || 0,
+      to_i:     _win.to_i || 0,
+      from_j: _win.from_j || 0,
+      to_j:     _win.to_j || 0
+    };
+  };
 
-    var checkRange = function(i, j, minI, maxI, minJ, maxJ) {
-      if (i < 0) {
+  var randomizer = function (matrix, from, to) {
+    for (var i = 0; i < matrix.n; i++) {
+      for (var j = 0; j < matrix.m; j++) {
+        matrix.setVal(i, j, randomInt(from, to));
+      }
+    }
+    return matrix;
+  };
+
+  Matrix.new = function(n, m) {
+    var win = windower({to_i:n, to_j: m});
+    return newWindowedMatrix(new Create2DArray(n,m), win);
+  };
+
+  var newWindowedMatrix = function (mat, windows) {
+    var i0 = windows.from_i,
+        i1 = windows.to_i,
+        j0 = windows.from_j,
+        j1 = windows.to_j;
+
+    var partitioner = function(from_i, from_j, to_i, to_j) {
+      var win = windower({
+        from_i: i0 + from_i,
+        to_i: i0 + to_i,
+        from_j: j0 + from_j,
+        to_j: j0 + to_j
+      });
+      return newWindowedMatrix(mat, win);
+    };
+
+    var checkRange = function(i, j) {
+      if (i < i0)       {
         throw "i too low";
       }
-      if (i >= maxI - minI) {
+      if (i >= i1) {
         throw "i too high";
       }
-      if (j < 0) {
+      if (j < j0)       {
         throw "j too low";
       }
-      if (j >= maxJ - minJ) {
+      if (j >= j1) {
         throw "j too high";
       }
     };
 
-    var getter = function (iOff, iMax, jOff, jMax) {
-      return function(i, j) {
-        checkRange(i, j, iOff, iMax, jOff, jMax);
-        return mat[i + iOff][j + jOff];
-      };
+    var getter = function(i, j) {
+      var real_i = i + i0,
+          real_j = j + j0;
+      checkRange(real_i, real_j);
+      return mat[real_i][real_j];
     };
 
-    var setter = function (iOff, iMax, jOff, jMax) {
-      return function(i, j, val) {
-        checkRange(i, j, iOff, iMax, jOff, jMax);
-        mat[i + iOff][j + jOff] = val;
-      };
+    var setter = function(i, j, val) {
+      var real_i = i + i0,
+          real_j = j + j0;
+      checkRange(real_i, real_j);
+      mat[real_i][real_j] = val;
     };
 
-    var partitioner = function (from_i, from_j, to_i, to_j) {
-      return {
-        getVal: getter(from_i, to_i, from_j, to_i),
-        setVal: setter(from_i, to_i, from_j, to_i),
-        toLaTeX: latexifier(from_i, to_i, from_j, to_i),
-        randomize: function(){}, // no-op
-        n: from_i - to_i,
-        m: from_j - to_j
-      };
-    };
+    var latexifier = function () {
+      var n = i1 - i0,
+          m = j1 - j0;
+      var str = "\\overset{" + n + "\\times" + m + "}{\\begin{bmatrix}\n";
+      for (var i = i0; i < i1; i++) {
 
-    var latexifier = function(iOff, iMax, jOff, jMax) {
-      var n = iMax - iOff;
-      var m = jMax - jOff;
-      return function () {
-        var str = "\\overset{" + n + "\\times" + m + "}{\\begin{bmatrix}\n";
-        for (var i = iOff; i < iMax; i++) {
-
-          for (var j = jOff; j < jMax; j++) {
-            str += mat[i][j];
-            if (j !== jMax - 1) {
-              str += " & ";
-            }
-          }
-          if (i !== iMax - 1) {
-            str += "\\\\";
+        for (var j = j0; j < j1; j++) {
+          str += mat[i][j];
+          if (j !== j1 - 1) {
+            str += " & ";
           }
         }
-        return str + "\\end{bmatrix}}";
-      };
-    };
-
-    var randomizer = function (from, to) {
-      for (var i = 0; i < n; i++) {
-        for (var j = 0; j < m; j++) {
-          mat[i][j] = randomInt(from, to);
+        if (i !== i1 - 1) {
+          str += "\\\\";
         }
       }
-      return this;
+      return str + "\\end{bmatrix}}";
     };
 
     return {
-      getVal: getter(0, n, 0, m),
-      setVal: setter(0, n, 0, m),
-      toLaTeX: latexifier(0, n, 0, m),
-      randomize: randomizer,
       partition: partitioner,
-      n: n,
-      m: m
+      randomize: function(from, to) { return randomizer(this, from, to); },
+      getVal: getter,
+      setVal: setter,
+      toLaTeX: latexifier,
+      n: i1,
+      m: j1
     };
   };
 
