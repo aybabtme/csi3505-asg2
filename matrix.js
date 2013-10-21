@@ -130,94 +130,11 @@ var Matrix = {};
     return matrix;
   };
 
-  Matrix.new = function(n, m) {
-    var win = windower({to_i:n, to_j: m});
-    return newWindowedMatrix(new Create2DArray(n,m), win);
-  };
-
-  var newWindowedMatrix = function (mat, windows) {
-    var i0 = windows.from_i,
-        i1 = windows.to_i,
-        j0 = windows.from_j,
-        j1 = windows.to_j;
-
-    var partitioner = function(from_i, from_j, to_i, to_j) {
-      var win = windower({
-        from_i: i0 + from_i,
-        to_i: i0 + to_i,
-        from_j: j0 + from_j,
-        to_j: j0 + to_j
-      });
-      return newWindowedMatrix(mat, win);
-    };
-
-    var checkRange = function(i, j) {
-      if (i < i0)       {
-        throw "i too low";
-      }
-      if (i >= i1) {
-        throw "i too high";
-      }
-      if (j < j0)       {
-        throw "j too low";
-      }
-      if (j >= j1) {
-        throw "j too high";
-      }
-    };
-
-    var getter = function(i, j) {
-      var real_i = i + i0,
-          real_j = j + j0;
-      checkRange(real_i, real_j);
-      return mat[real_i][real_j];
-    };
-
-    var setter = function(i, j, val) {
-      var real_i = i + i0,
-          real_j = j + j0;
-      checkRange(real_i, real_j);
-      mat[real_i][real_j] = val;
-    };
-
-    var latexifier = function () {
-      var n = i1 - i0,
-          m = j1 - j0;
-      var str = "\\overset{" + n + "\\times" + m + "}{\\begin{bmatrix}\n";
-      for (var i = i0; i < i1; i++) {
-
-        for (var j = j0; j < j1; j++) {
-          str += mat[i][j];
-          if (j !== j1 - 1) {
-            str += " & ";
-          }
-        }
-        if (i !== i1 - 1) {
-          str += "\\\\";
-        }
-      }
-      return str + "\\end{bmatrix}}";
-    };
-
-    return {
-      _mat: mat,
-      partition: partitioner,
-      randomize: function(from, to) { return randomizer(this, from, to); },
-      add: function(other) { return Matrix.add(this, other); },
-      sub: function(other) { return Matrix.sub(this, other); },
-      get: getter,
-      set: setter,
-      toLaTeX: latexifier,
-      n: i1 - i0,
-      m: j1 - j0
-    };
-  };
-
-  Matrix.add = function(a, b) {
+  var add = function(a, b) {
     if (a.n !== b.n || a.m !== b.m) {
       throw "incompatible matrices, different dimensions";
     }
-    var c = Matrix.new(a.n, a.m);
+    var c = Matrix.new(a.n, a.m, "(" + a.name + "+" + b.name + ")");
     for (var i = 0; i < c.n; i++) {
       for (var j = 0; j < c.m; j++) {
         var sum = Scalar.addFunc(a.get(i, j),b.get(i, j));
@@ -227,11 +144,11 @@ var Matrix = {};
     return c;
   };
 
-  Matrix.sub = function(a, b) {
+  var sub = function(a, b) {
     if (a.n !== b.n || a.m !== b.m) {
       throw "incompatible matrices, different dimensions";
     }
-    var c = Matrix.new(a.n, a.m);
+    var c = Matrix.new(a.n, a.m, "(" + a.name + "-" + b.name + ")");
     for (var i = 0; i < c.n; i++) {
       for (var j = 0; j < c.m; j++) {
         var diff = Scalar.subFunc(a.get(i, j),b.get(i, j));
@@ -259,8 +176,94 @@ var Matrix = {};
     }
   };
 
+  Matrix.new = function(n, m, name) {
+    var win = windower({to_i:n, to_j: m});
+    return newWindowedMatrix(new Create2DArray(n,m), win, name);
+  };
+
+  var newWindowedMatrix = function (mat, windows, name) {
+    var i0 = windows.from_i,
+        i1 = windows.to_i,
+        j0 = windows.from_j,
+        j1 = windows.to_j;
+
+    var partitioner = function(from_i, from_j, to_i, to_j, name) {
+      var win = windower({
+        from_i: i0 + from_i,
+        to_i: i0 + to_i,
+        from_j: j0 + from_j,
+        to_j: j0 + to_j
+      });
+      return newWindowedMatrix(mat, win, name);
+    };
+
+    var checkRange = function(i, j) {
+      if (i < i0)       {
+        throw "i too low, was "+i+" but must be under " + i0 + " in matrix " + name;
+      }
+      if (i >= i1) {
+        throw "i too high, was "+i+" but must not exceed " + i1 + " in matrix " + name;
+      }
+      if (j < j0)       {
+        throw "j too low, was "+j+" but must be under " + j0 + " in matrix " + name;
+      }
+      if (j >= j1) {
+        throw "j too high, was "+j+" but must not exceed " + j1 + " in matrix " + name;
+      }
+    };
+
+    var getter = function(i, j) {
+      var real_i = i + i0,
+          real_j = j + j0;
+      checkRange(real_i, real_j);
+      return mat[real_i][real_j];
+    };
+
+    var setter = function(i, j, val) {
+      var real_i = i + i0,
+          real_j = j + j0;
+      checkRange(real_i, real_j);
+      mat[real_i][real_j] = val;
+    };
+
+    var latexifier = function () {
+      var n = i1 - i0,
+          m = j1 - j0;
+      var str = "\\overset{" + name + n + "\\times" + m + "}{\\begin{bmatrix}\n";
+      for (var i = i0; i < i1; i++) {
+
+        for (var j = j0; j < j1; j++) {
+          str += mat[i][j];
+          if (j !== j1 - 1) {
+            str += " & ";
+          }
+        }
+        if (i !== i1 - 1) {
+          str += "\\\\";
+        }
+      }
+      return str + "\\end{bmatrix}}";
+    };
+
+    return {
+      name: name || "",
+      _mat: mat,
+      partition: partitioner,
+      randomize: function(from, to) { return randomizer(this, from, to); },
+      add: function(other) { return add(this, other); },
+      sub: function(other) { return sub(this, other); },
+      get: getter,
+      set: setter,
+      toLaTeX: latexifier,
+      n: i1 - i0,
+      m: j1 - j0
+    };
+  };
+
+
+
   Matrix.stdMatrixMul = function (a, b) {
-    var c = Matrix.new(a.n, b.m);
+    var c = Matrix.new(a.n, b.m, "(" + a.name + b.name + ")");
     mul(a,b,c);
     return c;
   };
@@ -280,7 +283,6 @@ var Matrix = {};
       // Don't need to grow it
       return orig;
     }
-
     var grownMat = Matrix.new(nextN, nextN);
     for (var i = 0; i < orig.n; i++) {
       for (var j = 0; j < orig.n; j++) {
@@ -292,76 +294,76 @@ var Matrix = {};
 
 
   var strassen = function(a, b, c, leafSize) {
-    if (a.n !== b.n || a.m !== b.m) {
-      throw "incompatible matrices, different dimensions";
-    }
-    if (a.n !== a.m) {
-      throw "incompatible matrices, not square matrices";
-    }
 
     if (a.n <= leafSize) {
       mul(a, b, c);
       return;
     }
 
-    var grownA = growNextPowerOf2(a);
-    var grownB = growNextPowerOf2(b);
+    var A = growNextPowerOf2(a);
+    var B = growNextPowerOf2(b);
 
-    var partA = { n: grownA.n / 2, m: grownA.m / 2 };
-    var a11 = grownA.partition(0,       0,       partA.n,  partA.m);
-    var a12 = grownA.partition(0,       partA.m, partA.n,  grownA.m);
-    var a21 = grownA.partition(partA.n, 0,       grownA.n, partA.m);
-    var a22 = grownA.partition(partA.n, partA.m, grownA.n, grownA.m);
+    var n = A.n;
 
-    var partB = { n: grownB.n / 2, m: grownB.m / 2 };
-    var b11 = grownB.partition(0,       0,       partB.n,  partB.m);
-    var b12 = grownB.partition(0,       partB.m, partB.n,  grownB.m);
-    var b21 = grownB.partition(partB.n, 0,       grownB.n, partB.m);
-    var b22 = grownB.partition(partB.n, partB.m, grownB.n, grownB.m);
+    var A11 = A.partition(0,   0,   n/2, n/2, "A11");
+    var A12 = A.partition(0,   n/2, n/2, n,   "A12");
+    var A21 = A.partition(n/2, 0,   n,   n/2, "A21");
+    var A22 = A.partition(n/2, n/2, n,   n,   "A22");
 
-    var m1 = Matrix.new(a11.n, b11.m);
-    var m2 = Matrix.new(a21.n, b11.m);
-    var m3 = Matrix.new(a11.n, b12.m);
-    var m4 = Matrix.new(a22.n, b11.m);
-    var m5 = Matrix.new(a11.n, b22.m);
-    var m6 = Matrix.new(a11.n, b11.m);
-    var m7 = Matrix.new(a12.n, b22.m);
+    var B11 = B.partition(0,   0,   n/2, n/2, "B11");
+    var B12 = B.partition(0,   n/2, n/2, n,   "B12");
+    var B21 = B.partition(n/2, 0,   n,   n/2, "B21");
+    var B22 = B.partition(n/2, n/2, n,   n,   "B22");
 
-    strassen(a11.add(a22), b11.add(b22), m1, leafSize);
-    strassen(a21.add(a22), b11         , m2, leafSize);
-    strassen(a11         , b12.sub(b22), m3, leafSize);
-    strassen(a22         , b21.sub(b11), m4, leafSize);
-    strassen(a11.add(a12), b22         , m5, leafSize);
-    strassen(a21.sub(a11), b11.add(b12), m6, leafSize);
-    strassen(a12.sub(a22), b21.add(b22), m7, leafSize);
+    var M1 = Matrix.new(n, n, "M1");
+    var M2 = Matrix.new(n, n, "M2");
+    var M3 = Matrix.new(n, n, "M3");
+    var M4 = Matrix.new(n, n, "M4");
+    var M5 = Matrix.new(n, n, "M5");
+    var M6 = Matrix.new(n, n, "M6");
+    var M7 = Matrix.new(n, n, "M7");
 
-    var c11 = m1.add(m4).sub(m5).add(m7);
-    var c12 = m3.add(m5);
-    var c21 = m2.add(m4);
-    var c22 = m1.add(m3).sub(m2).add(m6);
+    strassen(A11.add(A22), B11.add(B22), M1, leafSize);
+    strassen(A21.add(A22), B11         , M2, leafSize);
+    strassen(A11         , B12.sub(B22), M3, leafSize);
+    strassen(A22         , B21.sub(B11), M4, leafSize);
+    strassen(A11.add(A12), B22         , M5, leafSize);
+    strassen(A21.sub(A11), B11.add(B12), M6, leafSize);
+    strassen(A12.sub(A22), B21.add(B22), M7, leafSize);
 
-    var halfN = c11.n;
+    var C11 = M1.add(M4).sub(M5).add(M7);
+    var C12 = M3.add(M5);
+    var C21 = M2.add(M4);
+    var C22 = M1.add(M3).sub(M2).add(M6);
+
+    var halfN = C11.n;
     for (var i = 0; i < c.n; i++) {
       for (var j = 0; j < c.n; j++) {
         if (i < halfN && j < halfN) {
-          c.set(i, j, c11.get(i, j));
+          c.set(i, j, C11.get(i, j));
         }
         else if (i < halfN && j >= halfN) {
-          c.set(i, j, c12.get(i, j - halfN));
+          c.set(i, j, C12.get(i, j - halfN));
         }
         else if (i >= halfN && j < halfN) {
-          c.set(i, j, c21.get(i - halfN, j));
+          c.set(i, j, C21.get(i - halfN, j));
         }
         else if (i >= halfN && j >= halfN) {
-          c.set(i, j, c22.get(i - halfN, j - halfN));
+          c.set(i, j, C22.get(i - halfN, j - halfN));
         }
       }
     }
   };
 
   Matrix.strassenMatrixMul = function (a, b, leafSize) {
-    var c = Matrix.new(a.n, b.m);
-    strassen(a,b,c,leafSize);
+    if (a.n !== b.n || a.m !== b.m) {
+      throw "incompatible matrices, different dimensions";
+    }
+    if (a.n !== a.m) {
+      throw "incompatible matrices, not square matrices";
+    }
+    var c = Matrix.new(a.n, b.m, "C");
+    strassen(a, b, c, leafSize);
     return c;
   };
 })();

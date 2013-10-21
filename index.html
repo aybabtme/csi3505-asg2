@@ -7,6 +7,8 @@
 </head>
 <body>
 
+<script type="text/javascript">puts("<h1>NOT READY FOR PRINT - CHANGE max_n</h1>");var max_n = 32;</script>
+
 <h1>Antoine Grondin - 6276497</h1>
 
 <h2>CSI3505 - Asg 1</h2>
@@ -20,6 +22,120 @@
     multiplication matricielle pour $n=4$ (montrez les formules que vous
     employez). Lequel est plus rapide pour cette valeur de $n$.
 </blockquote>
+
+
+<h3>Classic</h3>
+<ul>
+    <li>Additions:</li>
+    We can observe quite easily that for each matrices
+    multiplication, there are $n_A \cdot m_B \cdot m_A$ additions.
+    <li>Subtractions:</li>
+    The classic algorithms doesn't perform any substraction.
+    <li>Multiplications:</li>
+    Again, we can observe quite easily that for each matrices multiplication
+    , there are $n_A \cdot m_B \cdot m_A$ scalar multiplications.
+</ul>
+
+<p>Because every matrix is $N \times N$, let $n$ be $n_A = m_A = m_B$ and thus,
+    there are $n^3$ additions and $n^3$ multiplications.</p>
+
+$$W_{classic}(n)=2n^3 $$
+<script type="text/javascript">
+    // Follows from LaTeX equation above
+    var classicExpect = function(n) {
+        return 2 * Math.pow(n, 3);
+    }
+</script>
+
+<h3>Strassen</h3>
+
+<h4>Partitions</h4>
+<p>We will see that it is important to know how many partitions are made by
+    the algorithm. Every $n$-length side is split in half until it reaches
+    $LeafSize$.</p>
+
+<p>Let $split_{total}$ be the number of times we partition the
+    matrices. Let $split_n$ be how many times $n$ can be divided by two and
+    return an integer. Let $split_{leaf}$ be how many times $LeafSize$ can be
+    divided by two and return an integer.</p>
+
+<p>$$\begin{align}
+    split_n &= \lg(n) \\\
+    split_{leaf} &= \lg(LeafSize) \\\
+    split_{total} &= \lg(n) - \lg(LeafSize)\\\
+                  &= \lg\left(\frac{n}{LeafSize}\right)
+\end{align}$$</p>
+
+<p>Sometime we will only be concerned about the number of partitions that
+    are passed down to the <em>Classic</em> algorithm.  This means,
+    the leaves of the recursive tree.  Because the matrices are grown to
+    powers of 2, every recursive tree is a full four-way tree.  Here we look
+    at only one side of the matrix, so the recursive tree is a perfect binary
+    tree. Thus, the number of leaves in the tree is :</p>
+<p>$$split_{final} = \frac{split_{total}}{2}$$</p>
+<p>Because we were only looking at one side of the matrix,
+    the count $P$ of actual matrices that are passed to the <em>Classic</em>
+    algorithm is:</p>
+<p>$$\begin{align}
+    P &= (split_{final})^2 \\\
+    &= \left(\frac{split_{total}}{2}\right)^2 \\\
+    &= \left(\frac{ \lg\left(\frac{n}{LeafSize}\right) }{2}\right)^2 \\\
+    &= \frac{1}{4} \lg\left(\frac{n}{LeafSize}\right)^2 \\\
+\end{align}$$</p>
+<p>Which is also the number of partitions that are not leaves.</p>
+<ul>
+    <li>Addition:</li>
+
+    <p>When $n \leq LeafSize$, the count of additions is the same as <em>Classic
+    </em>: $n^3$.  There are $P$ such cases.</p>
+    <p>$$Addition_{classic} = Pn^3$$</p>
+
+    <p>Every recursion of the algorithm, except for those that are solved
+        with <em>Classic</em>, involves $6$ matrix additions from the creation
+        of the $M_{k}$ matrices and $6$ more matrix additions from the
+        reassembly of the $M_{k}$ matrices into $C_{ij}$.  Each matrix
+        addition involves $n^2$ scalar additions. This means:</p>
+    <p>$$Addition_{recursion} = 12Pn^2$$</p>
+    <p>Combining the additions that are done in <em>Classic</em> and in
+        the recursion, we find that we perform:</p>
+    <p>$$Addition = Pn^3  + 12Pn^2
+        $$</p>
+
+    <li>Subtraction: </li>
+    <p>Subtractions are performed only in the recursive calls.  Each
+        recursive call involves $4$ matrix subtractions for the creation of
+        the $M_k$ matrices, followed by $2$ matrix subtractions for
+        reassembly of $M_k$ matrices into $C_{ij}$.  Each matrix
+        subtraction involves $n^2$ scalar subtractions.  Thus we perform:</p>
+    <p>$$Subtraction= 6Pn^2$$</p>
+
+    <li>Multiplication:</li>
+    <p>Same as for the <em>Addition</em> case, there are a number of scalar
+        multiplications due to the <em>Classic</em> algorithm :</p>
+    <p>$$Multiplication_{classic} = Pn^3$$</p>
+
+    <p>And that's it.  The recursive calls perform no matrix
+        multiplications (the delegate that task to the recursion,
+        which is accounted for already).</p>
+</ul>
+<p>So if we put together all those numbers, we can find $W_{Strassen}(n)$.</p>
+<p>$$\begin{align}
+    W(n, leaf) &= Addition + Subtraction + Multiplication \\\
+         &= Pn^3  + 12Pn^2 + 6Pn^2 + Pn^3 && \text{expand}\\\
+         &= 2Pn^3 + 18Pn^2 && \text{regroup}\\\
+         &= P\left(2n^3 + 18n^2\right) && \text{factor out }P\\\
+         &= \frac{1}{4} \lg\left(\frac{n}{leaf}\right)^2 \left(2n^3 +
+    18n^2\right) && \text{plug in }P\\\
+\end{align}$$</p>
+<script>
+    // Follows from LaTeX equation above
+    var strassenExpect = function(n, l) {
+        var P = 1/4 * Math.pow(Math.log(n/l), 2);
+        return Math.round(P * (2 * Math.pow(n,3) + 18 * Math.pow(n,2)))
+    }
+</script>
+
+<h3>Experiment</h3>
 
 The classic matrix multiplication algorithm goes like this:
 <pre><code>function ClassicMul(a, b, c) {
@@ -38,7 +154,7 @@ The classic matrix multiplication algorithm goes like this:
 
 The Straussen matrix multiplication algorithm goes like this:
 
-<pre><code>function StraussenMul(a, b, c, leafSize) {
+<pre><code>function StrassenMul(a, b, c, leafSize) {
     if (a.n !== b.n || a.m !== b.m || a.n !== a.m) {
         throw "incompatible matrices";
     }
@@ -67,13 +183,13 @@ The Straussen matrix multiplication algorithm goes like this:
     var m6 = Matrix.new(n, n);
     var m7 = Matrix.new(n, n);
 
-    straussen(a11 + a22, b11 + b22, m1, leafSize);
-    straussen(a21 + a22, b11      , m2, leafSize);
-    straussen(a11      , b12 - b22, m3, leafSize);
-    straussen(a22      , b21 - b11, m4, leafSize);
-    straussen(a11 + a12, b22      , m5, leafSize);
-    straussen(a21 - a11, b11 + b12, m6, leafSize);
-    straussen(a12 - a22, b21 + b22, m7, leafSize);
+    Strassen(a11 + a22, b11 + b22, m1, leafSize);
+    Strassen(a21 + a22, b11      , m2, leafSize);
+    Strassen(a11      , b12 - b22, m3, leafSize);
+    Strassen(a22      , b21 - b11, m4, leafSize);
+    Strassen(a11 + a12, b22      , m5, leafSize);
+    Strassen(a21 - a11, b11 + b12, m6, leafSize);
+    Strassen(a12 - a22, b21 + b22, m7, leafSize);
 
     var c11 = m1 + m4 - m5 + m7;
     var c12 = m3 + m5;
@@ -99,8 +215,6 @@ The Straussen matrix multiplication algorithm goes like this:
 };
 </code></pre>
 
-
-
 Let's look at some empirical data generated by using these algorithms with
 random matrices (in each case, matrices are $M_{n \times n}$):
 
@@ -125,29 +239,35 @@ var countOps = function (f) {
         subCount++;
         return a - b;
     }
-
+    var start = +new Date();
     f();
+    var since = +new Date() - start;
 
-    return {add:addCount, sub: subCount, mul: mulCount};
+    return {add:addCount, sub: subCount, mul: mulCount, time: since};
 }
 
 var t = VerticalTable(["$n$",
-    "<strong>Classic</strong> $all$",
-    "<strong>Strassen</strong> $all$",
+    "<strong>Classic</strong><br>$real\\\\(expect)$",
+    "<strong>Strassen</strong><br> $real\\\\(expect)$",
     "<strong>Classic</strong> $+$",
     "<strong>Strassen</strong> $+$",
     "<strong>Classic</strong> $-$",
     "<strong>Strassen</strong> $-$",
     "<strong>Classic</strong> $\\times$",
-    "<strong>Strassen</strong> $\\times$"
+    "<strong>Strassen</strong> $\\times$",
+    "<strong>Classic</strong> dT",
+    "<strong>Strassen</strong> dT"
 ]);
 
 var from = 1, to = 8;
 var leafSize = 4;
-for (var i = 0; i < 30; i++) {
 
-    var a = Matrix.new(i, i).randomize(from, to);
-    var b = Matrix.new(i, i).randomize(from, to);
+puts("<p>$LeafSize=" + leafSize + "$");
+
+for (var j = 0; j < max_n; j += 8) {
+    var i = Math.round(j);
+    var a = Matrix.new(i, i, "a").randomize(from, to);
+    var b = Matrix.new(i, i, "b").randomize(from, to);
 
     var std = function() {
         Matrix.stdMatrixMul(a,b);
@@ -161,31 +281,53 @@ for (var i = 0; i < 30; i++) {
     var strassenCount = countOps(strass);
     t.addEntry([
         math(i),
-        math(stdCount.add + stdCount.sub + stdCount.mul),
-        math(strassenCount.add + strassenCount.sub + strassenCount.mul),
+        stdCount.add +
+                stdCount.sub +
+                stdCount.mul + "<br>(" +
+                classicExpect(i) + ")",
+        strassenCount.add
+                + strassenCount.sub
+                + strassenCount.mul + "<br>(" +
+                strassenExpect(i, leafSize) + ")",
         stdCount.add,
         strassenCount.add,
         stdCount.sub,
         strassenCount.sub,
         stdCount.mul,
-        strassenCount.mul
+        strassenCount.mul,
+        stdCount.time + " ms",
+        strassenCount.time + " ms"
     ]);
 }
 
 puts(t.toHTML());
 </script>
+<p>As you can see, the expected and real count for <em>Classic</em> match
+perfectly.</p>
 
-That's not quite looking like we'd expect; Strassen doesn't appear to perform
-very well.  Now, all these numbers are computed automatically from the
-implementation of the algorithm and injections into the `+`, `-` and `*` scalar
-operators; so they can't lie.
+<p>The real count for <em>Strassen</em> is much more expensive to
+compute than the expected count, so we can only display here the first few
+orders of 2-magnitudes. You can notice that the expected values are roughly
+following the real values.  On a longer computation,
+    we confirmed that this is true up to $n=512$.</p>
 
-Thus two possible justifications are that:
+<p>It is also interesting to note that as $LeafSize$ increases,
+    $W_{Strassen}(n, leaf)$ maintains a proper growth rate and follows the
+    experimental values.</p>
+
+<p>As experimental data converges with the expected values,
+    we can convince ourselves that the $W(n)$ equations are indeed correct.</p>
+
+<p>Strassen doesn't appear to perform very well. Two possible justifications
+are that:</p>
 <ul>
     <li>The implementation above is broken; or</li>
-    <li>The algorithm is implemented as it should, and it's advantage
-        lies in the rare cases where it performs less scalar
-        multiplications</li>
+    <li>The algorithm is implemented as it should, but its analysis is
+        incorrect (counts the wrong operations).</li>
+    <li>The implementation we've seen is memory hungry,
+        as it creates many temporary matrices $M_k$ as it recurses.  So
+        although <em>Strassen</em> perform less scalar multiplications,
+        this is made irrelevant by the memory allocations it performs.</li>
 </ul>
 
 <h2>b)</h2>
@@ -195,6 +337,14 @@ Thus two possible justifications are that:
     multiplications, quand le seuil employé pour l'algorithme est $n=4$.
     Expliquez votre réponse brièvement. Vous N’AVEZ PAS BESOIN de résoudre
     cette relation de récurrence.</p></blockquote>
+
+<p>Each matrix is reduced to a set of 7 half-sized matrices, and
+    again recursively, until they reach $n=4$, where they are multiplied using
+    the classical $n^3$ algorithm.  Thus, $W(4) = 64$.</p>
+<p>$$\begin{align}
+    W(4) &= 64 \\\
+    W(n) &= 7W(n/2) \\\
+    \end{align}$$</p>
 
 <h1>Exercice 2</h1>
 
@@ -230,17 +380,17 @@ Thus two possible justifications are that:
 
     while (position == 0 && i<=n && !done) {
 
-        if (x == S[i]) { position = i; }
-        else if (x > S[i]) { i= i + 4; }
+        if (x == S[i]) { position = i; }                    // one here
+        else if (x > S[i]) { i = i + 4; }                   // one here
 
         else { //go backwards
             last = i-3;
             while (!done) {
                 i = i-1
-                if (S[i] = = x) {
+                if (S[i] == x) {                            // one here
                     position = i;
                     done = true;
-                } else if ((x &gt; S[i]) || (i = = last)) {
+                } else if ((x > S[i]) || (i == last)) {     // one here
                     done = true;
                 }
             }
@@ -257,6 +407,21 @@ Thus two possible justifications are that:
     toutes les entrées partitionnées en $9$ types si vous faites cette analyse
     correctement. Vous devez clairement expliquer la partition de vos
     entrées.</p></blockquote>
+
+<ul>
+    <li>$I_1$: $x$ is not in $S$</li>
+    <li>$I_2$: $x$ is at position $4$</li>
+    <li>$I_3$: $x$ is greater than value at position $4$</li>
+    <li>$I_4$: $x$ is at position $3$</li>
+    <li>$I_5$: $x$ is at position $2$</li>
+    <li>$I_6$: $x$ is at position $1$</li>
+    <li>$I_7$: $x$ is at position $4 + 4k$</li>
+    <li>$I_8$: $x$ is greater than value at position $4 + 4k$</li>
+    <li>$I_9$: $x$ is at position $3 + 4k$</li>
+    <li>$I_10$: $x$ is at position $2 + 4k$</li>
+    <li>$I_11$: $x$ is at position $1 + 4k$</li>
+</ul>
+
 
 <h1>Exercice 3</h1>
 
