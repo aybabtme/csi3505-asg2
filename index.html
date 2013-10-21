@@ -476,7 +476,26 @@ are that:</p>
     L’Hôpital :
     $$ 10(\lg n)^2 + 15 \lg n \text{ est } O(n \lg n)$$</p></blockquote>
 
+<p>$$\begin{align}
+    f(n) &= 10(\lg n)^2 + 15 \lg n \\\
+    g(n) &= n \lg n \\\
+    f(n)' &= \frac{20\lg n + 15}{n} \\\
+    g(n)' &= \lg n + 1 \\\
+    \frac{f(n)'}{g(n)'} &= \frac{20\lg n + 15}{n \left(\lg n + 1\right)}\\\
+    &= \frac{20\lg n + 15}{n \lg n + n} \\\
+    \lim_{n \to \infty}{\frac{f(n)'}{g(n)'}}
+    &= \frac{20\lg n + 15}{n \lg n + n} \\\
+    &= \frac{20\lg n}{n \lg n + n} \\\
+    &= \frac{20\lg n}{\left(\lg n\right)\left((n-1) \lg n + \frac{n}{\lg
+    n}\right)}\\\
+    &= \frac{20}{ {(n-1) \lg n}_{= \infty} + { \frac{n}{\lg n} } }_{=
+    \infty}\\\
+    &= \frac{20}{\infty}\\\
+    &= 0
+    \end{align}$$</p>
 
+<p>Thus it is bounded up by $g$ (since $g$ is always greater,
+    $\frac{f}{g}$ tends to 0). So $10(\lg n)^2 + 15 \lg n$ is $O(n \lg n)$</p>
 
 <h2>b)</h2>
 
@@ -484,11 +503,32 @@ are that:</p>
     L’Hôpital :
     $$4n^2 + 10n^3 + 20 \text{ est } \Omega(n^2)$$</p></blockquote>
 
+<p>$$\begin{align}
+    f(n) &= 4n^2 + 10n^3 + 20\\\
+    g(n) &= n^2 \\\
+    f(n)' &= 8n + 30n^2\\\
+    g(n)' &= 2n \\\
+    \lim_{\to \infty} \frac{f(n)'}{g(n)'} &= \frac{8n + 30n^2}{2n} \\\
+    \lim_{\to \infty} \frac{f(n)'}{g(n)'} &= \frac{8 + 30n}{2} \\\
+    \lim_{\to \infty} \frac{f(n)'}{g(n)'} &= 4 + 15n \\\
+    \lim_{\to \infty} \frac{f(n)'}{g(n)'} &= \infty !!!
+    \end{align}$$</p>
+
+<p>Thus clearly $f$ is bounded below by $g$.</p>
+
 <h2>c)</h2>
 
 <blockquote><p>Prouvez ce qui suit en utilisant la définition formelle de « Big
     Oh » (i.e. trouvez $c$ et $n_0$) :
     $$1000n^2 + 10n + 10 \in O(n^2)$$</p></blockquote>
+
+<p>$$\begin{align}
+    f(n) &= 1000n^2 + 10n + 10 \\\
+    f(n) &\leq 1000n^2 + 10n^2 + 10n^2 \\\
+         &= 1020n^2 \\\
+    f(1) = 1020 &\leq 1020(1)^2 = 1020 \\\
+    \end{align}$$
+    For any $n>=1$ (or $n_0=1$) with $c=1020$, $f \in O(n^2)$.</p>
 
 <h1>Exercice 4</h1>
 
@@ -505,13 +545,68 @@ are that:</p>
 <pre><code>int findRem(int x, int n, int p) {
     int r;
     if (n == 2) {
-        return (x*x) % p;
+        return (x*x) mod p;
     } else {
         r = findRem(x, n/2, p);
         return (r*r) mod p;
     }
 }
 </code></pre>
+
+<p>Let's see some data to help us a bit.</p>
+
+<script type="text/javascript">
+    var countOps = function (n) {
+        var mulCount = 0;
+        var mul = function(a, b) {
+            mulCount++;
+            return a*b;
+        }
+
+        var divCount = 0;
+        var div = function(a, b) {
+            divCount++;
+            return a/b;
+        }
+
+        var modCount = 0;
+        var mod = function(a, b) {
+            modCount++;
+            return a%b;
+        }
+
+        var findRem = function(x, n, p) {
+            if (n === 2) {
+                return mod(mul(x, x), p);
+            }
+            var r = findRem(x, div(n,2), p);
+            return mod(mul(r, r), p);
+        };
+
+        findRem(randomInt(from, to), n, randomInt(from, to));
+
+        return {
+            mul: mulCount,
+            div: divCount,
+            mod: modCount,
+            total: mulCount + divCount + modCount
+        };
+    }
+
+var t = HorizontalTable(["$n$", "total", "$\\times$", "$/$", "$\\bmod$"]);
+for (var i = 2; i < 1<<16; i*=2) {
+    var c = countOps(i);
+    t.addEntry([
+        i,
+        c.total,
+        c.mul,
+        c.div,
+        c.mod
+    ]);
+}
+puts(t.toHTML());
+</script>
+
 
 <blockquote><p>Faites une analyse du pire cas pour l’algorithme ci-dessus. Bien
     sûr, assumez que $n$ est une puissance de $2$, i.e. $n=2k$ pour $k>=1$.
@@ -525,21 +620,52 @@ are that:</p>
     multiplications et le nombre de fois que la fonction $\bmod$ est
     appelée.</p></blockquote>
 
-<h2>b)</h2>
+If $n$ is $2$, there will be 1 multiplication and 1 modulo.  Otherwise, there
+will 1 division, 1 multiplication, 1 modulo and whatever the recursive call
+will do.
+<p>$$\begin{align}
+    W(2) &= 1 + 1 = 2\\\
+    W(4) &= 1 + 1 + 1 + (2) = 5\\\
+    W(8) &= 1 + 1 + 1 + (1 + 1 + 1 + (2)) = 8\\\
+    W(16) &= 1 + 1 + 1 + (1 + 1 + 1 + (5)) =  W(8) + 3 = 11\\\
+    W(n) &= W(n/2) + 3
+    \end{align}$$</p>
 
+<h2>b)</h2>
 <blockquote><p>Avec la substitution, résolvez la relation de récurrence de
     <em>a)</em>. Montrez votre travail, et suivez la méthode vue en classe.</p>
 </blockquote>
 
-<h2>c)</h2>
+<p>From the data above, we can see the algorithm looks like it grows
+    linearly.  We can thus guess a substitution with a linear equation.</p>
 
+<p>Guess $W(n)$ \leq cn + d$ for some constants $c$ and $d$.</p>
+
+<h2>c)</h2>
 <blockquote><p>Vérifiez votre solution de b) en utilisant l’induction.</p>
 </blockquote>
 
-<h2>d)</h2>
+<p><em>Base case:</em> $n=2, W(2) = 2 \leq c(2) - d$, which is true as
+    long as $2+d \leq 2c$.</p>
 
+<p><em>Inductive case:</em> We assume that our guess holds for $n/2$.  We
+    now want to show that it is true for $n$.
+$$\begin{align}
+    W(n) &= W(n/2) + 3 \\\
+    &\leq (c(n/2) - d) + 3 && \text{by IH} \\\
+    &=\frac{1}{2}cn - d + 3 \\\
+    &\leq cn - d
+    \end{align}$$</p>
+
+<p>This si true as long as $d \geq 3$.  So we have two constraints,
+    $d \geq 3$ and $2 + d \leq 2c$, or $3 \leq d \leq 2c - 2$.  Let's
+    chose $d = 3$ and $c=10$.  So $W(n)$ is bounded up by $10c + 3$.</p>
+
+<h2>d)</h2>
 <blockquote><p>Quelle est la complexité de cet algorithme? Vous n’avez qu’à
     donner votre réponse ici.</p></blockquote>
+
+$$\mathcal{O}(n)$$
 
 <h1>Exercice 5</h1>
 
@@ -557,11 +683,40 @@ are that:</p>
     votre idée pour l’algorithme du type <em>diviser pour régner</em>
     clairement en français, puis écrivez-le en pseudocode.</p></blockquote>
 
+<p>Given an amount $n$, remove $10$.  Pass that new amount back to the same
+    algorithm and see how many combinations it can produce with this missing
+    10.</p>
+<p>Do the same thing removing $5$ and $1$ cents.  Then sum those
+    possibilities together.</p>
+
+<script type="text/javascript">
+    var change = function(n) {
+        if (n < 0)   { return 0; }
+        if (n === 0) { return 1; }
+        var with10 = change(n - 10);
+        var with5 =  change(n - 5);
+        var with1 =  change(n - 1);
+        return with10 + with5 + with1;
+    };
+</script>
+
+<pre><code>function change(n) {
+    if (n < 0)  { return 0; }
+    if (n == 0) { return 1; }
+    var with10 = change(n - 10);
+    var with5  = change(n - 5);
+    var with1  = change(n - 1);
+    return with10 + with5 + with1;
+};</code></pre>
+
 <h2>b)</h2>
 
 <blockquote><p>Pensez-vous que cette stratégie est bonne (en termes
     d’efficacité) pour ce problème ou non? Expliquez brièvement votre
     réponse.</p></blockquote>
+
+<p>No because many cases in the recursion tree are recomputed many times.
+    This problem would lend itself better to dynamic programming.</p>
 
 <h1>Exercice 6</h1>
 
@@ -581,6 +736,39 @@ are that:</p>
     BESOIN de vérifier votre réponse finale en utilisant l’induction.</p>
 </blockquote>
 
+<p>$$\begin{align}
+W(n) &= W(n/2) + n \lg n \\\
+     &= W(n/4) + \frac{n}{2} \lg \frac{n}{2} + n \lg n \\\
+     &= W(n/8) + \frac{n}{4} \lg \frac{n}{4} + \frac{n}{2} \lg \frac{n}{2} + n \lg n \\\
+     &= W(n/16) + \frac{n}{8} \lg \frac{n}{8} + \frac{n}{4} \lg \frac{n}{4} + \frac{n}{2}lg \frac{n}{2} \lg n \\\
+W(n) &= 1 + 2 \lg 2 + 4 \lg 4 + 8 \lg 8 + \cdots  + \frac{n}{4} \lg \frac{n}{4} + \frac{n}{2} \lg \frac{n}{2} + n \lg n \\\
+     &= 1 + \sum_{i=1}^{\lg n}{2^i \lg 2^i}
+\end{align}$$</p>
+
+<script type="text/javascript">
+    var q6W = function(n) {
+        if (n === 1) { return 1; }
+        return q6W(n/2) + n * Math.log(n);
+    }
+    var q6Sum = function(n) {
+        var sum = 0;
+        var fact = 0.0;
+        for (var i = 1; i < Math.log(2*n); i++) {
+            fact = Math.pow(2, i)
+            sum += (fact * Math.log(fact));
+        }
+        return sum + 1;
+    }
+    var q6T = VerticalTable(["$n$", "$W(n)$", "Sum(n)"]);
+    for (var i = 2; i < i<<16; i*=2) {
+        q6T.addEntry([
+                i,
+                Math.round(q6W(i) * 1000)/1000,
+                Math.round(q6Sum(i) * 1000)/1000
+        ]);
+    }
+    puts(q6T.toHTML());
+</script>
 
 <script type="text/javascript"
         src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
