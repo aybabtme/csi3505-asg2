@@ -408,19 +408,64 @@ are that:</p>
     correctement. Vous devez clairement expliquer la partition de vos
     entrées.</p></blockquote>
 
+<p>By definition of the problem, $P(I_k) =  \frac{1}{9}$ for $0 < k \leq 9$</p>
 <ul>
-    <li>$I_1$: $x$ is not in $S$</li>
-    <li>$I_2$: $x$ is at position $4$</li>
-    <li>$I_3$: $x$ is greater than value at position $4$</li>
-    <li>$I_4$: $x$ is at position $3$</li>
-    <li>$I_5$: $x$ is at position $2$</li>
-    <li>$I_6$: $x$ is at position $1$</li>
-    <li>$I_7$: $x$ is at position $4 + 4k$</li>
-    <li>$I_8$: $x$ is greater than value at position $4 + 4k$</li>
-    <li>$I_9$: $x$ is at position $3 + 4k$</li>
-    <li>$I_10$: $x$ is at position $2 + 4k$</li>
-    <li>$I_11$: $x$ is at position $1 + 4k$</li>
+    <li>$I_1$: $x$ is at position $4$</li>
+    <p>When the key is found at position $4k$, it means we either found
+        it first compare we did.
+        $$t(I_1)=1$$</p>
+
+    <li>$I_2$: $x$ is greater than value at position $4$,
+        thus it is not in $S$</li>
+    <p>When we found that $x$ is greater than $S_{4}$,
+        it means $I_1$ failed, and then we compared that $x$ was greater.
+        $$t(I_2)=2$$</p>
+
+    <li>$I_3$: $x$ is at position $4 - 1$</li>
+    <p>When the key is found there, we first looked at $I_2$,
+        then we compared with the $4-1$ position.
+        $$t(I_3)=t(I_2) + 1 = 3$$</p>
+
+    <li>$I_4$: $x$ is at position $4 - 2$</li>
+    <p>When the key is found there, we first looked at $I_3$,
+        then we compared with the $4-2$ position.
+        $$t(I_4)=t(I_3) + 1 = 4$$</p>
+
+    <li>$I_5$: $x$ is at position $4 - 3$</li>
+    <p>When the key is found there, we first looked at $I_4$,
+        then we compared with the $4-3$ position.
+        $$t(I_5)=t(I_4) + 1 = 5$$</p>
+
+    <li>$I_6$: $x$ is less than $4k$ but greater than $4 - 1$,
+        not in $S$</li>
+    <p>This case takes as much times as $t(I_3)$, the same compares
+        suffice.
+        $$t(I_6)=3$$</p>
+
+    <li>$I_7$: $x$ is less than $4k - 1$ but greater than $4k - 2$,
+        not in $S$</li>
+    <p>This case takes as much times as $t(I_4)$, the same compares
+        suffice.
+        $$t(I_7)=4$</p>
+
+    <li>$I_8$: $x$ is less than $4k - 2$ but greater than $4k - 3$,
+        thus is not in $S$</li>
+    <p>This case takes as much times as $t(I_5)$, the same compares
+        suffice.
+        $$t(I_8)=5$$</p>
+
+    <li>$I_9$: $x$ is less than any value in $S$, thus is not in $S$</li>
+    <p>To find that out, we check $I_8$.
+        $$t(I_9)= 5$$</p>
 </ul>
+
+<p>Let's compute the average case when $n=4$:
+    $$\begin{align}
+    A(4) &= \sum_{i=1}^{9}{P(I_i)t(I_i)} \\\
+    &= \sum_{i=1}^{9}{\frac{1}{9}t(I_i)} \\\
+    &= \frac{1}{9}\left(1 + 2 + 3 + 4 + 5 + 3 + 4 + 5 + 5\right) \\\
+    &= \frac{32}{9} \\\
+    \end{align}$$</p>
 
 
 <h1>Exercice 3</h1>
@@ -430,6 +475,8 @@ are that:</p>
 <blockquote><p>Prouvez ce qui suit en utilisant les limites et la règle de
     L’Hôpital :
     $$ 10(\lg n)^2 + 15 \lg n \text{ est } O(n \lg n)$$</p></blockquote>
+
+
 
 <h2>b)</h2>
 
